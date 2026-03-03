@@ -61,7 +61,7 @@ topicos-deteccion-diabetes/
 
 👨‍💻 Autores:
 
-- [IFlores Quispe, Diego](https://github.com/diegobtx-bit)
+- [Flores Quispe, Diego](https://github.com/diegobtx-bit)
 - [Manosalva Vasquez, Aldair Ribaldo](https://github.com/amanosalvav23)
 - [Valdivia Díaz, Neyser Eberth](https://github.com/NEVD10)
 
