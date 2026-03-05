@@ -5,6 +5,7 @@ Script PySpark para exportar la tabla final (Gold) a CSV
 Proyecto: California Housing Prices
 """
 
+import os
 from pyspark.sql import SparkSession
 
 # 1. Crear sesión Spark con soporte Hive
@@ -14,7 +15,6 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # 2. Configuración de origen (Capa Functional)
-# Usamos la base de datos definida en tus instrucciones
 database = "topicosb_functional"
 table = "housing_enriched"
 
@@ -24,12 +24,12 @@ print(f"📥 Leyendo tabla {database}.{table}...")
 try:
     df = spark.table(f"{database}.{table}")
     
-    # 4. Ruta dentro de tu repositorio actual
-    # Cambiamos 'spark-elt-medallon' por tu carpeta actual
-    output_path = "file:/home/hadoop/topicos-housing-prices-1-/datalake/temp"
+    # 4. Ruta Dinámica (Funciona en Mac y Linux)
+    # Detectamos la carpeta actual del proyecto
+    cwd = os.getcwd()
+    output_path = f"file:{cwd}/datalake/temp"
 
     # 5. Guardar como CSV
-    # coalesce(1) junta todo en un solo archivo para que sea fácil de renombrar
     df.coalesce(1) \
       .write \
       .mode("overwrite") \
