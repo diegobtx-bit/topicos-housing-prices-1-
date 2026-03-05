@@ -1,5 +1,3 @@
-poblar_capa_landing.py:
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -31,7 +29,7 @@ def parse_arguments():
 # @section 2. Inicialización de SparkSession
 # =============================================================================
 
-def create_spark_session(app_name="ProcesoLanding_Housing-DiegoFlores"):
+def create_spark_session(app_name="ProcesoLanding_Housing-ValdiviaDiazNeyser"):
     return SparkSession.builder \
         .appName(app_name) \
         .enableHiveSupport() \
@@ -160,3 +158,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
