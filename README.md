@@ -1,7 +1,6 @@
 # 🏆PROYECTO FINAL DE TOPICOS BI - HOUSING PRICES
 
-Proyecto educativo de ingeniería de datos que implementa un pipeline ETL con Apache Spark siguiendo el patrón de arquitectura Medallón (Bronze → Silver → Gold), adaptado a capas: Workload → Landing → Curated → Functional, con integración completa: Hive → Parquet → CSV → MongoDB.
-📋 Tabla de Contenidos
+Descripcion 123455
 
 - 🏗️ Arquitectura Medallón Explicada
 ```table
@@ -70,4 +69,5 @@ topicos-deteccion-diabetes/
 
 📅 Última actualización: Marzo 2026.
 
-## ✨ "La calidad de los datos no es un paso, es un viaje a través de capas de refinamiento" ✨
+© Copyright UNC - 2026
+Este trabajo está bajo una licencia [Creative Commons Attribution 4.0 Internacional](LICENSE).
