@@ -1,0 +1,123 @@
+----------------------
+ 1. EJECUTAR SERVICIOS 
+----------------------
+start-dfs.sh
+start-yarn.sh
+hive --service metastore &
+sleep 10
+hive --service hiveserver2 &
+
+# Iniciar Airflow (si está configurado dentro del repo)
+cd /home/hadoop/topicos-housing-prices-1-/airflow
+source venv/bin/activate
+airflow standalone
+
+-------------------------
+ 2. CARGAR CAPA WORKLOAD 
+-------------------------
+# 1. Crear ruta HDFS y cargar los archivos .csv y .data de housing
+hdfs dfs -mkdir -p /user/hadoop/dataset
+hdfs dfs -put /home/hadoop/topicos-housing-prices-1-/dataset/housing.* /user/hadoop/dataset/
+hdfs dfs -ls /user/hadoop/dataset
+
+# 2. Ejecutar ingesta a Hive (Capa Workload)
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --conf spark.sql.warehouse.dir=/user/hadoop/warehouse \
+  --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+  /home/hadoop/topicos-housing-prices-1-/procesos/poblar_capa_workload.py \
+  --env TopicosB \
+  --username hadoop \
+  --base_path /user \
+  --local_data_path /user/hadoop/dataset
+
+------------------------
+ 3. CARGAR CAPA LANDING 
+------------------------
+# 1. Crear ruta HDFS para el esquema housing.avsc
+hdfs dfs -mkdir -p /user/hadoop/datalake/schema/TOPICOSB_LANDING/
+hdfs dfs -put -f /home/hadoop/topicos-housing-prices-1-/schema/housing.avsc /user/hadoop/datalake/schema/TOPICOSB_LANDING/
+hdfs dfs -ls /user/hadoop/datalake/schema/TOPICOSB_LANDING/
+
+# 2. Ejecutar estandarización a Avro
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --conf spark.sql.warehouse.dir=/user/hadoop/warehouse \
+  --conf spark.sql.avro.compression.codec=snappy \
+  --packages org.apache.spark:spark-avro_2.12:3.5.0 \
+  /home/hadoop/topicos-housing-prices-1-/procesos/poblar_capa_landing.py \
+  --env TopicosB \
+  --username hadoop \
+  --base_path /user \
+  --schema_path /user/hadoop/datalake/schema \
+  --source_db topicosb_workload
+
+------------------------
+ 4. CARGAR CAPA CURATED 
+------------------------
+# Limpieza de nulos en total_bedrooms y tipos de datos
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --conf spark.sql.warehouse.dir=/user/hadoop/warehouse \
+  --conf spark.sql.parquet.compression.codec=snappy \
+  --conf spark.dynamicAllocation.enabled=true \
+  --conf spark.executor.instances=4 \
+  /home/hadoop/topicos-housing-prices-1-/procesos/poblar_capa_curated.py \
+  --env TopicosB \
+  --username hadoop \
+  --base_path /user \
+  --source_db landing \
+  --enable-validation
+
+---------------------------
+ 5. CARGAR CAPA FUNCTIONAL
+---------------------------
+# Creación de KPIs (ej. promedio de precios por proximidad al océano)
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --conf spark.sql.warehouse.dir=/user/hadoop/warehouse \
+  --conf spark.sql.parquet.compression.codec=snappy \
+  /home/hadoop/topicos-housing-prices-1-/procesos/poblar_capa_functional.py \
+  --env TopicosB \
+  --username hadoop \
+  --base_path /user \
+  --source_db curated
+
+-------------------------
+ 6. EXPORTAR GOLD TO CSV
+-------------------------
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --conf spark.sql.warehouse.dir=/user/hadoop/warehouse \
+  /home/hadoop/topicos-housing-prices-1-/procesos/export_gold_to_csv.py
+
+----------------------------------------------
+ 7. RENOMBRAR RESULTADO FINAL (GOLD.CSV)
+----------------------------------------------
+# Copiar el resultado de Spark a un solo archivo legible
+cp /home/hadoop/topicos-housing-prices-1-/datalake/temp/part-*.csv /home/hadoop/topicos-housing-prices-1-/datalake/gold_housing.csv
+
+# Verificar las primeras 5 casas procesadas
+head -5 /home/hadoop/topicos-housing-prices-1-/datalake/gold_housing.csv
+
+--------------------
+ 8. MIGRAR A MONGODB
+--------------------
+spark-submit \
+  --master yarn \
+  --deploy-mode client \
+  --packages org.mongodb.spark:mongo-spark-connector_2.12:10.4.0 \
+  /home/hadoop/topicos-housing-prices-1-/procesos/export_gold_to_mongo.py
+
+--------------------
+ 9. DETENER SERVICIOS
+--------------------
+stop-yarn.sh
+stop-dfs.sh
+pkill -f HiveServer2
+pkill -f HiveMetaStore

@@ -61,7 +61,7 @@ topicos-housing-price/
 👨‍💻 Autores:
 
 - [Flores Quispe, Diego](https://github.com/diegobtx-bit)
-- [Manosalva Vasquez, Aldair Ribaldo](https://github.com/amanosalvav23)
+- [Manosalva Vásquez, Aldair Ribaldo](https://github.com/amanosalvav23)
 - [Valdivia Díaz, Neyser Eberth](https://github.com/NEVD10)
 
 👨‍💻 CoAutor: 
